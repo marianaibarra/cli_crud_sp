@@ -1,6 +1,10 @@
 import sys
 import pyodbc
 import insert_sp
+import get_sp
+import get_one_sp
+import update_sp
+import delete_sp
 
 path = sys.argv[1]
 nameOfFile = sys.argv[2]
@@ -42,24 +46,20 @@ if typeOfQuery == "insert":
     msg = insert_sp.insert(fullColumns, table, msg)
 elif typeOfQuery == "get":
     helper = True
-    # msg = get_sp.get()
-    msg = "get"
+    msg = get_sp.get(fullColumns, table, msg)
 elif typeOfQuery == "getone":
     helper = True
-    # msg = get_one_sp.getOne()
-    msg = "getone"
+    msg = get_one_sp.getOne(fullColumns, table, msg)
 elif typeOfQuery == "update":
     helper = True
-    # msg = update_sp.update()
-    msg = "update"
+    msg = update_sp.update(fullColumns, table, msg)
 elif typeOfQuery == "delete":
     helper = True
-    # msg = delete_sp.delete()
-    msg = "delete"
+    msg = delete_sp.delete(table, msg)
 
 if helper:
     try:
-        with open(nameOfFile, 'w') as f:
+        with open("sp/" + nameOfFile, 'w') as f:
             f.write(msg)
     except FileNotFoundError:
         print(f"The {path} path directory does not exist")
