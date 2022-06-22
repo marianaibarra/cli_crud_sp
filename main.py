@@ -1,10 +1,11 @@
 import sys
 import pyodbc
+import insert_sp
 
 path = sys.argv[1]
 nameOfFile = sys.argv[2]
 table = sys.argv[3]
-typeOfQuery = sys.argv[3]
+typeOfQuery = sys.argv[4]
 
 conn = pyodbc.connect('Driver={SQL Server};'
                       'Server=LAPTOP-2HVAQE28;'
@@ -27,62 +28,38 @@ cursor.execute(f'SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N\'
 
 msg = f"CREATE PROCEDURE [dbo].[{nameOfFile[:-4]}]"
 
-columsNames = []
-# TODO:
-# - TAKE OUT None type (dont write it)
-# - Put primary key at bottom and dont add comma
-# - Wrap in brackets CharMaxLength 
-for i in cursor:
+fullColumns = []
+helper = False
 
+for i in cursor:
     a = i[3]
     b = i[7]
     c = i[8]
-    if c == "None":
-        a = None
-    if(i[3] == "Id" + table[:-1]):
-        b = " int = 0 output"
-    msg += f"""
-    @{a} {b} {c},"""
-    columsNames.append(i[3])
+    fullColumns.append([a,b,c])
 
+if typeOfQuery == "insert":
+    helper = True
+    msg = insert_sp.insert(fullColumns, table, msg)
+elif typeOfQuery == "get":
+    helper = True
+    # msg = get_sp.get()
+    msg = "get"
+elif typeOfQuery == "getone":
+    helper = True
+    # msg = get_one_sp.getOne()
+    msg = "getone"
+elif typeOfQuery == "update":
+    helper = True
+    # msg = update_sp.update()
+    msg = "update"
+elif typeOfQuery == "delete":
+    helper = True
+    # msg = delete_sp.delete()
+    msg = "delete"
 
-msg += """
-AS
-BEGIN TRY
-SET NOCOUNT ON;
-"""
-# TODO:
-# - Take primary key out of here
-# - dont add comma on last field
-msg += f"""
-INSERT INTO [dbo].[{table}]
-("""
-for i in columsNames:
-    msg += f"[{i}],"
-
-msg += """)
-    VALUES ("""
-# TODO:
-# - Take primary key out of here
-# - dont add comma on last field
-for i in columsNames:
-    msg += f"[@{i}],"
-
-msg += f""")
-
-    SELECT @Id{table[:-1]} = SCOPE_IDENTITY();
-
-END TRY 
-
-BEGIN CATCH
-
-    SELECT ERROR_MESSAGE() AS Response;
-
-END CATCH
-"""
-
-try:
-    with open(nameOfFile, 'w') as f:
-        f.write(msg)
-except FileNotFoundError:
-    print(f"The {path} path directory does not exist")
+if helper:
+    try:
+        with open(nameOfFile, 'w') as f:
+            f.write(msg)
+    except FileNotFoundError:
+        print(f"The {path} path directory does not exist")
